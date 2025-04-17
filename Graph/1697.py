@@ -1,42 +1,66 @@
-#앞뒤 출구가 있어 stack,queue를 유연하게 사용할 수 있는 deaue import
-from collections import deque 
-#bfs 탐색을 위한 함수 정의
-def bfs(): 
-    #탐색해야할 위치를 저장하는 큐 선언
-    q = deque()
-    #해당 큐에 탐색 시작 위치인 N을 저장 
-    q.append(N) 
-    #더이상 탐색해야할 위치가 없을 때까지 반복
-    #if조건에 의해 조기 종료되지 않고, q = empty로 종료시, 탐색 대상이 존재x
-    while q:
-        #popleft로 가장 앞에 저장된(가장 먼저 저장된) 위치를 불러옴
-        v = q.popleft()
-        #불러온 위치가 탐색 대상일때
-        if v == K:
-            #visited의 해당 인덱스에 저장된 것은 해당 노드에 도달하기 위해 필요한 최단 이동 횟수
-            print(visited[v])
-            #함수 종료
-            return
-        #다음 노드 후보군에 대해(각각 뒤로 걷기, 앞으로 걷기, 순간이동을 의미)
-        for next_node in (v-1, v+1, v*2):
-            #다음 노드가 유효값의 범위 안에 있고
-            #다음 노드가 이전에 탐색된 적이 없을 때
-            if(0 <= next_node < MAX and visited[next_node] == 0):
-                #다음 노드의 방문기록에 이전 노드의 방문기록 +1 (이전노드 -> 다음노드로 이동을 의미)
-                visited[next_node] = visited[v] + 1
-                #큐에 다음 노드의 새끼 노드들을 등록
-                q.append(next_node)
-#유효값의 최대범위를 저장하는 MAX 변수    
-MAX = 100001              
-#수빈과 동생의 위치를 입력받기
-N, K = map(int, input().split())
-#각 노드들에 도달하기 위한 최단 이동 횟수를 저장하는 list(방문기록) 
-visited = [0]*MAX 
-#해당 함수 호출
-bfs()
+import sys
+input = sys.stdin.readline
 
-#인사이트
-#BFS는 탐색과정에서 한번에 목표로 직진하는 것이 아니라
-#노드의 레벨을 다운그레이드 하면서 목표 노드에 도달할 때까지 모든 노드를 탐색하고
-#이 과정에서 해당 노드에 도달하기 위한 경로, 혹은 필수 이동횟수를 기록
-#최종적으로 목표 노드에 도달했을 때, 목표 노드의 인덱스에 저장된 방문기록을 호출
+N, K = map(int, input().split())
+
+def search(start, target): #start=동생, target=수빈
+    index = [(start, start, 0)] #각각 이전 탐색위치, 현재 위치, 이동횟수를 의미함
+
+    #dfs 구현
+    while(index):
+        before, now, cnt = index.pop(0) #jump 위치를 우선 탐색하도록 함
+
+        if(now == target): #성공시 탐색 종료
+            print(cnt)
+            return
+        
+        #점프 우선 탐색
+        if(now % 2 == 0):
+            jump = now / 2
+
+            if(abs(jump - target) < abs(now - target)): #점프가 이득인 경우, 점프 위치만 추가
+                index.append((now, jump, cnt+1))
+            else: #점프가 손해인 경우, 걷기만 함
+                walkDown = now-1
+                walkUp = now+1
+
+                #걷기시, 이전 위치로 돌아가는 경우 방지하면서 걷기
+                if(walkDown != before): 
+                    index.append((now, walkDown, cnt+1))
+                if(walkUp != before):
+                    index.append((now, walkUp, cnt+1))
+        
+        #점프 못하는 경우 걷기
+        else:
+            walkDown = now-1
+            walkUp = now+1
+
+            if(walkDown != before):
+                index.append((now, walkDown, cnt+1))
+            if(walkUp != before):
+                index.append((now, walkUp, cnt+1))
+
+if(N > K): #동생이 앞에 있는 경우 걷기만 함
+    print(N-K)
+else: #동생이 뒤에 있는 경우 점프,걷기 탐색
+    search(K, N)
+
+
+#문제 해설
+#백트래킹 + dfs 문제
+#백트래킹: 순방향 탐색은 점프의 경우의 수가 너무 넓어서 탐색이 어려움, 반면 백트래킹시 효율적으로 점프 경우의 수를 줄일 수 있음
+#dfs: 점프 위주로 탐색해야 빠르게 탐색할 수 있음 (예를 들어, 동생 80 수빈 4인 상황이라면 무조건 점프가 유리함)
+
+
+# def f(n, k):
+#     if n>=k:
+#         return n-k
+#     elif k==1:
+#         return 1
+#     elif k%2:
+#         return min(f(n, k+1), f(n, k-1)) + 1
+#     else:
+#         return min(k-n, f(n, k//2)+1)
+
+# n, k = map(int,input().split())
+# print(f(n, k))
